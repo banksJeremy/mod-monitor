@@ -6,21 +6,22 @@
     document.body.appendChild(s);";
 set -vx
 
-(babel \
+(node_modules/.bin/babel \
     --stage 1 \
     --watch \
     --source-maps inline \
     client-src/ \
     --out-dir dist/)&
 
-(watchify \
+(node_modules/.bin/watchify \
     client-src/main.js \
     -t [ babelify --stage 1 ] \
     --debug \
     --outfile dist/client-dev.js)&
 
-(http-server \
+(node_modules/.bin/http-server \
     dist/ \
     -a localhost \
     -p 29684 \
     -c -1);
+

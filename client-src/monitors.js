@@ -73,4 +73,4 @@ class DeletionMonitor {
   }
 }
 
-module.exports = {DeletedPost, DeletionMonitor}
+module.exports = {DeletedPost, DeletionMonitor};
