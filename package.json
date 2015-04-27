@@ -6,5 +6,7 @@
     "browserify": "~9.0.8",
     "babelify": "~6.0.2",
     "babel": "~5.1.13"
-  }
+  },
+  "description": " ",
+  "repository": "github:jeremybanks/mod-monitor"
 }

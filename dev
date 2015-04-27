@@ -6,6 +6,10 @@
     document.body.appendChild(s);";
 set -vx
 
+cd "$(dirname $0)"
+
+npm install --dev  .
+
 (node_modules/.bin/babel \
     --stage 1 \
     --watch \
