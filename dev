@@ -1,0 +1,16 @@
+#!/bin/bash
+>&2 echo "For your convenience: 
+  document.body.innerHTML +=
+    '<script src=http://localhost:29684/all-dev.js></script>';
+"
+
+(>&2 echo "Running http-server from dist/.
+"; http-server dist/ -a localhost -p 29684) &
+
+(>&2 echo "Running babel from src/ to dist/all-dev.js.
+"; babel \
+    src/minor-polyfills.js \
+    src/equality-set.js \
+    src/monitors.js \
+    src/main.js \
+    --out-file dist/all-dev.js --watch --source-maps inline)
