@@ -2,7 +2,7 @@
   "dependencies": {
     "express": "~4.12.3",
     "babelify": "~6.0.2",
-    "browserify": "~9.0.8
+    "browserify": "~9.0.8",
     "babel": "~5.1.13"
   },
   "dev-dependencies": {
