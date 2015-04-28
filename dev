@@ -10,7 +10,11 @@ cd "$(dirname $0)"
 
 npm install --dev  .
 
-cp client-src/blank.html dist/blank.html
+rm -r dist/
+
+mkdir -p dist/{html,js}
+
+cp client-src/html/broadcaster.html dist/html/broadcaster.html
 
 (node_modules/.bin/babel \
     --stage 1 \
@@ -20,10 +24,10 @@ cp client-src/blank.html dist/blank.html
     --out-dir dist/)&
 
 (node_modules/.bin/watchify \
-    client-src/main.js \
+    client-src/js/main.js \
     -t [ babelify --stage 1 ] \
     --debug \
-    --outfile dist/client-dev.js)&
+    --outfile dist/js/client-dev.js)&
 
 (babel-node server-src/main.js);
 
