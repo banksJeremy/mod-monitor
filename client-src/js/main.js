@@ -70,13 +70,14 @@ async function siteMain() {
   console.log("SETTING UP BROADCASTING")
   console.log(broadcasting);
   const deletionMonitor = new monitors.DeletionMonitor;
-  const pollIntervald = setInterval(async function() {
-    const newPosts = await deletionMonitor.getNew();
-    for (let post of newPosts) {
-      broadcasting.broadcast(post);
-      console.log(`${post.utcTime} [${post.id}] ${post.title}`);
-      break; // skipping rest because we have no throttling
-    }
+  const pollIntervald = setInterval(() => {
+    deletionMonitor.getNew().then(newPosts => {
+      for (let post of newPosts) {
+        broadcasting.broadcast(post);
+        console.log(`${post.utcTime} [${post.id}] ${post.title}`);
+        break; // skipping rest because we have no throttling
+      }
+    });
   }, 25 * 1000);
 
   broadcasting.broadcast("SITE UP AND RUNNING");
