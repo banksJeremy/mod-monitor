@@ -9,7 +9,7 @@ window.addEventListener('message', event => {
   }
   if (event.data.type == 'message') {
     console.log("get message from outside, broadcasting through storage");
-    localStorage.setItem('message_', event.data);
+    localStorage.setItem('message_', JSON.stringify(event.data));
   }
 });
 
@@ -17,9 +17,10 @@ window.addEventListener('storage', event => {
   console.log('got storage event dur')
   if (event.key == 'message_') {
     console.log('got storage message_!', event);
-    if (event.newValue.type == 'message') {
+    const value = JSON.parse(event.newValue)
+    if (value.type == 'message') {
       console.log("got message from storage, sharing with ports");
-      listeningPorts.forEach(port => port.postMessage(event.data.body));
+      listeningPorts.forEach(port => port.postMessage(value.body));
     }
   }
 });

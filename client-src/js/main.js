@@ -32,10 +32,10 @@ class LocalBroadcasting {
     const {port1: ourPort, port2: farPort} = new MessageChannel;
     this.port_ = ourPort;
     this.port_.onmessage = event => {
-      const {id, data: body} = event.data;
-      if (!this.seenMessageIds_.has(id)) {
-        this.handleMessage_(data);
-        this.seenMessageIds_.add(id);
+      console.log(event);
+      if (!this.seenMessageIds_.has(event.data.id)) {
+        this.handleMessage_(event.data.message);
+        this.seenMessageIds_.add(event.data.tesid);
         console.log("handled event", event);
       } else {
         console.log("ignoring duplicate message", event);
@@ -75,6 +75,7 @@ async function siteMain() {
     for (let post of newPosts) {
       broadcasting.broadcast(post);
       console.log(`${post.utcTime} [${post.id}] ${post.title}`);
+      break; // skipping rest because we have no throttling
     }
   }, 25 * 1000);
 
@@ -87,7 +88,10 @@ async function chatMain() {
 
   broadcasting.broadcast("CHAT UP AND RUNNING");
   broadcasting.handleMessage_ = message => {
-    document.getElementById('input').value = JSON.stringify(message);
+    console.log("MESSSAGE!");
+    if (!message.isQuestion) return;
+    document.getElementById('input').value = (
+      `**\`DELETED QUESTION\`** \\[[${message.id}](http://stackoverflow.com/q/${message.id})] ${message.title}`);
     document.getElementById('sayit-button').click();
   };
 }
