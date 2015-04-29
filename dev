@@ -2,7 +2,7 @@
 >&2 echo "For your convenience: 
   
     var s = document.createElement('script');
-    s.src = 'http://localhost:29684/js/client-dev.js';
+    s.src = 'http://localhost:29684/all.js';
     document.body.appendChild(s);";
 set -vx
 
@@ -10,24 +10,24 @@ cd "$(dirname $0)"
 
 npm install --dev  .
 
-rm -r dist/
+rm -rf client-dist/
 
-mkdir -p dist/{html,js}
+mkdir -p client-dist/{html,js}
 
-cp client-src/html/broadcaster.html dist/html/broadcaster.html
+cp client-src/broadcaster.html client-dist/broadcaster.html
 
 (node_modules/.bin/babel \
     --stage 1 \
     --watch \
     --source-maps inline \
     client-src/ \
-    --out-dir dist/)&
+    --out-dir client-dist/)&
 
 (node_modules/.bin/watchify \
-    client-src/js/main.js \
+    client-src/main.js \
     -t [ babelify --stage 1 ] \
     --debug \
-    --outfile dist/js/client-dev.js)&
+    --outfile client-dist/compiled.js)&
 
 (babel-node server-src/main.js);
 

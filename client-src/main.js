@@ -97,6 +97,12 @@ async function chatMain() {
   };
 }
 
-const main = location.host.match(/^chat\./) ? chatMain : siteMain;
+function main() {
+  if (location.host.match(/^chat\./)) {
+    chatMain();
+  } else {
+    siteMain();
+  }
+}
 
 setTimeout(main);
