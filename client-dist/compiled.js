@@ -1,1 +1,0 @@
-console.error("SyntaxError: /home/jeremy/Downloads/src/mod-monitor/client-src/monitors.js: Unexpected token (9:28) while parsing file: /home/jeremy/Downloads/src/mod-monitor/client-src/monitors.js");
