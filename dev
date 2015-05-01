@@ -12,9 +12,9 @@ npm install --dev  .
 
 rm -rf client-dist/
 
-mkdir -p client-dist/{html,js}
+mkdir -p client-dist/
 
-cp client-src/broadcaster.html client-dist/broadcaster.html
+cp client-src/*.html client-dist/
 
 (node_modules/.bin/babel \
     --stage 1 \

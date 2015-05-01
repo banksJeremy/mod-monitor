@@ -4,104 +4,59 @@ try {
   console.error(e);
 }
 
-const monitors = require('./monitors');
+const {DeletionMonitor, UndeletionVoteMonitor} = require('./monitors');
+const {LocalConnection} = require('./local-connection'); 
+const util = require('./util');
 
-class LocalBroadcasting {
-  constructor(callback) {
-    this.idBase_ = String(Math.random()) + String(new Date);
-    this.idIndex_ = (Math.random() * 512512) | 0;
-    this.callback_ = callback;
-    
-    let setReady, failReady;
-    this.frameReady_ = new Promise((resolve, reject) => {
-      setReady = resolve;
-      failReady = reject
-    });
-    
-    this.frame_ = document.createElement('iframe');
-    this.frame_.src = 'http://localhost:29684/broadcaster.html?' + Math.random();
-    this.frame_.addEventListener('load', setReady);
-    this.frame_.addEventListener('error', failReady);
-    document.body.appendChild(this.frame_);
-
-    console.log("created iframe");
-    this.frameReady_.then(() => console.log("FRAME READY"))
-
-    this.seenMessageIds_ = new Set();
-
-    const {port1: ourPort, port2: farPort} = new MessageChannel;
-    this.port_ = ourPort;
-    this.port_.onmessage = event => {
-      console.log(event);
-      if (!this.seenMessageIds_.has(event.data.id)) {
-        this.handleMessage_(event.data.message);
-        this.seenMessageIds_.add(event.data.tesid);
-        console.log("handled event", event);
-      } else {
-        console.log("ignoring duplicate message", event);
-      }
+function siteMain(localConnection) {
+  async function processDeletions(deletionMonitor) {
+    for (let post; post = await deletionMonitor.nextPost();) {
+      broadcasting.broadcast({
+        'type': 'deleted-post',
+        'data': post
+      });
     }
-    this.ready_ = this.frameReady_.then(() => {
-      this.frame_.contentWindow.postMessage({type: 'listener'}, '*', [farPort]);
-    });
+  }
+  
+  async function processUndeletionVotes(undeletionVoteMonitor) {
+    for (let post; post = await undeletionVoteMonitor.nextPost();) {
+      broadcasting.broadcast({
+        'type': 'deleted-post',
+        'data': post
+      });
+    }
   }
 
-  handleMessage_(message) {
-    console.log("got broadcasted message", message); 
-  }
-
-  async broadcast(message) {
-    console.log('awaiting ready to broadcast...');
-    await this.ready_;
-    console.log('brodcasting...', message);
-    this.frame_.contentWindow.postMessage({
-      type: 'message',
-      body: {
-        message: message,
-        id: this.idBase_ + this.idIndex_++
-      }
-    }, '*');
-  }
+  processDeletions(new DeletionMonitor);
+  processUndeletionVotes(new UndeletionVoteMonitor);
 }
 
-async function siteMain() {
-  const broadcasting = new LocalBroadcasting;
-  window['broadcasting'] = broadcasting;
-  console.log("SETTING UP BROADCASTING")
-  console.log(broadcasting);
-  const deletionMonitor = new monitors.DeletionMonitor;
-  const pollIntervald = setInterval(() => {
-    deletionMonitor.getNew().then(newPosts => {
-      for (let post of newPosts) {
-        broadcasting.broadcast(post);
-        console.log(`${post.utcTime} [${post.id}] ${post.title}`);
-        break; // skipping rest because we have no throttling
-      }
-    });
-  }, 25 * 1000);
-
-  broadcasting.broadcast("SITE UP AND RUNNING");
-}
-
-async function chatMain() {
-  const broadcasting = new LocalBroadcasting;
-  window['broadcasting'] = broadcasting;
-
-  broadcasting.broadcast("CHAT UP AND RUNNING");
-  broadcasting.handleMessage_ = message => {
-    console.log("MESSSAGE!");
-    if (!message.isQuestion) return;
-    document.getElementById('input').value = (
-      `**\`QUESTION DELETED\`** \\[[${message.id}](http://stackoverflow.com/q/${message.id})] ${message.title}`);
+async function chatMain(localConnection) {
+  async function sendMessage(message) {
+    document.getElementById('input').value = message;
     document.getElementById('sayit-button').click();
-  };
+    return new Promise((resolve, reject) => {
+      setTimeout(resolve, 4 * 1000);
+    })
+  }
+ 
+  for (let broadcast; broadcast = await broadcasting.nextMessage();) {
+    if (broadcast.type === 'deleted-post' && broadcast.data.isQuestion) {
+      await sendMessage(
+        `**\`QUESTION DELETED\`** \\[[${message.id}](http://stackoverflow.com/q/${message.id})] ${message.title}`);
+    }
+  }
 }
 
 function main() {
-  if (location.host.match(/^chat\./)) {
-    chatMain();
+  const localConnection = new LocalConnection();
+
+  if (location.host.match(/^chat\./)) { 
+    console.log('Chat host detected, assuming chat room.');
+    chatMain(localConnection);
   } else {
-    siteMain();
+    console.log('Non-chat host detected, assuming main community site.');
+    siteMain(localConnection);
   }
 }
 

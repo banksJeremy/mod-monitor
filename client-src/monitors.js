@@ -1,7 +1,44 @@
+const util = require('./util');
+
 const HOST = 'http://stackoverflow.com';
 const PATHS = {
 	RECENTLY_DELETED: '/tools?tab=delete&daterange=last30days&mode=recentlyDeleted'
 };
+
+class Monitor {  
+  MIN_CHUNK_FETCH_INTERVAL: 24 * 1000
+
+  constructor() {
+    this.chunk_ = [];
+    this.lastChunkFetchTime_ = -Infinity;
+  }
+
+  async getNextChunkNow_() {
+    throw new Error("must be implemented in subclass");
+  }
+
+  async untilNextChunkFetchTime_() {
+    for (;;) {
+      let durationUntilFetchNextChunk =
+          new Date - (this.lastChunkFetchTime_ + MIN_CHUNK_FETCH_INTERVAL);
+      if (durationUntilFetchNextChunk <= 0) {
+        this.lastChunkFetchTime_ = new Date;
+        break;
+      } else {
+        await util.wait(timeToNextChunk);
+        continue;
+      }
+    }
+  }
+
+  async next() {
+    while (!this.chunk_.length) {
+      await this.untilNextChunkFetchTime_();
+      this.chunk_ = await getNextChunk_();
+    }
+    return this.chunk_.shift();
+  }
+}
 
 class DeletedPost {
   constructor({id, utcTime, isQuestion, isAnswer, title}) {
@@ -73,4 +110,4 @@ class DeletionMonitor {
   }
 }
 
-module.exports = {DeletedPost, DeletionMonitor};
+module.exports = {DeletedPost, DeletionMonitor, UndeletionVoteMonitor};

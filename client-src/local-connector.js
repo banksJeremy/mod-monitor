@@ -38,12 +38,6 @@ class LocalConnector {
   }
 }
 
-
-window.listeningPorts = [];
-console.debug('Initializing LocalConnector');
-window.connector_ = new Connector;
-
-
 window.addEventListener('message', event => {
   console.log("GOT MESSAGe", event);
   if (event.data.type == 'listener') {

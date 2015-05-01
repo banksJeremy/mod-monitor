@@ -1,0 +1,10 @@
+"use strict";
+
+function wait(millis) {
+  return new Promise(function (resolve) {
+    setTimeout(resolve, millis);
+  });
+}
+
+module.exports = { wait: wait };
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi4uL2NsaWVudC1zcmMvdXRpbC5qcyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOztBQUFBLFNBQVMsSUFBSSxDQUFDLE1BQU0sRUFBRTtBQUNwQixTQUFPLElBQUksT0FBTyxDQUFDLFVBQUEsT0FBTyxFQUFJO0FBQzVCLGNBQVUsQ0FBQyxPQUFPLEVBQUUsTUFBTSxDQUFDLENBQUM7R0FDN0IsQ0FBQyxDQUFDO0NBQ0o7O0FBRUQsTUFBTSxDQUFDLE9BQU8sR0FBRyxFQUFDLElBQUksRUFBSixJQUFJLEVBQUMsQ0FBQyIsImZpbGUiOiJjbGllbnQtc3JjL3V0aWwuanMiLCJzb3VyY2VzQ29udGVudCI6WyJmdW5jdGlvbiB3YWl0KG1pbGxpcykge1xuICByZXR1cm4gbmV3IFByb21pc2UocmVzb2x2ZSA9PiB7XG4gICAgc2V0VGltZW91dChyZXNvbHZlLCBtaWxsaXMpOyAgICBcbiAgfSk7XG59XG5cbm1vZHVsZS5leHBvcnRzID0ge3dhaXR9O1xuIl19
