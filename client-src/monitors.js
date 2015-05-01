@@ -1,15 +1,10 @@
 const util = require('./util');
 
-const HOST = 'http://stackoverflow.com';
-const PATHS = {
-	RECENTLY_DELETED: '/tools?tab=delete&daterange=last30days&mode=recentlyDeleted'
-};
 
 class Monitor {  
-  MIN_CHUNK_FETCH_INTERVAL: 24 * 1000
-
   constructor() {
     this.chunk_ = [];
+    this.minChunkFetchInterval_ = 24 * 1000;
     this.lastChunkFetchTime_ = -Infinity;
   }
 
@@ -20,7 +15,7 @@ class Monitor {
   async untilNextChunkFetchTime_() {
     for (;;) {
       let durationUntilFetchNextChunk =
-          new Date - (this.lastChunkFetchTime_ + MIN_CHUNK_FETCH_INTERVAL);
+          new Date - (this.lastChunkFetchTime_ + this.minChunkFetchInterval_);
       if (durationUntilFetchNextChunk <= 0) {
         this.lastChunkFetchTime_ = new Date;
         break;
@@ -63,6 +58,8 @@ class DeletedPost {
 
 class DeletionMonitor {
   constructor() {
+    this.pathToRecentlyDeleted_ =
+        '/tools?tab=delete&daterange=last30days&mode=recentlyDeleted';
     this.seenPosts_ = new Map
   }
   
@@ -81,7 +78,7 @@ class DeletionMonitor {
   }
 
   async getLatest_() {
-    const doc = await this.getHTML_(HOST + PATHS.RECENTLY_DELETED);
+    const doc = await this.getHTML_(this.pathToRecentlyDeleted_);
     const rows = Array.from(doc.querySelectorAll('.summary-table tr'))
     const data = rows.map(row => {
       const link = row.querySelector('a');

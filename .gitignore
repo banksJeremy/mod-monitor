@@ -1,3 +1,4 @@
 dist/*
-node-modules
+*-dist/*
 node_modules/
+
