@@ -1,0 +1,7 @@
+language: node_js
+node_js:
+ - iojs
+ - node
+install: npm install --dev
+script: 'node_modules/.bin/browserify client-src/main.js -t [ babelify --stage 1 ] --debug --outfile client-dist/compiled.js'
+
