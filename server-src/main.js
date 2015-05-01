@@ -3,7 +3,7 @@ const express = require('express');
 function main() {
     const app = express();
 
-    app.use('/', express.static('dist/'));
+    app.use('/', express.static('client-dist/'));
 
     var server = app.listen(29684, 'localhost', function () {
       var host = server.address().address;

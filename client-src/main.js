@@ -19,7 +19,7 @@ class LocalBroadcasting {
     });
     
     this.frame_ = document.createElement('iframe');
-    this.frame_.src = 'http://localhost:29684/html/broadcaster.html?' + Math.random();
+    this.frame_.src = 'http://localhost:29684/broadcaster.html?' + Math.random();
     this.frame_.addEventListener('load', setReady);
     this.frame_.addEventListener('error', failReady);
     document.body.appendChild(this.frame_);
@@ -92,7 +92,7 @@ async function chatMain() {
     console.log("MESSSAGE!");
     if (!message.isQuestion) return;
     document.getElementById('input').value = (
-      `**\`DELETED QUESTION\`** \\[[${message.id}](http://stackoverflow.com/q/${message.id})] ${message.title}`);
+      `**\`QUESTION DELETED\`** \\[[${message.id}](http://stackoverflow.com/q/${message.id})] ${message.title}`);
     document.getElementById('sayit-button').click();
   };
 }
