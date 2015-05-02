@@ -11,10 +11,12 @@ class LocalConnector {
     window.addEventListener('storage', this);
     // A MessagePort will be used to communicate with the LocalConnection of the parent frame.
     this.port_ = null;
+
+    this.broadcastStorageKey_ = '__latestLocalBroadcast__';
   }
 
   handleEvent(event) {
-    if (event.type === 'message' && event.target === 'window') {
+    if (event.type === 'message' && event.target === window) {
       return this.handleWindowMessage_(event);
     } else if (event.type === 'message' && event.target instanceof MessagePort) {
       return this.handlePortMessage_(event);
@@ -26,38 +28,29 @@ class LocalConnector {
   }
 
   handleWindowMessage_(event) {
-
+    if (event.data.type == 'port') {
+      console.assert(this.port_ === null);
+      this.port_ = event.ports[0];
+    }
+    if (event.data.type == 'broadcast') {
+      localStorage.setItem(this.broadcastStorageKey_, JSON.stringify(event.data.data));
+    }
   }
 
   handlePortMessage_(event) {
-    
+    console.log("Got message from port.", event);
+    console.log("Ignoring -- I've no idea what to do with this.");
   }
 
   handleWindowStorage_(event) {
-
+    if (event.key === this.broadcastStorageKey_) {
+      console.log("Got broadcast storage event.", event);
+      const value = JSON.parse(event.newValue)
+      if (value.type == 'broadcast') {
+        listeningPorts.forEach(port => port.postMessage(value.body));
+      }
+    }
   }
 }
 
-window.addEventListener('message', event => {
-  console.log("GOT MESSAGe", event);
-  if (event.data.type == 'listener') {
-    console.log("ADDING LISTENER")
-    listeningPorts.push(event.ports[0]);
-  }
-  if (event.data.type == 'message') {
-    console.log("get message from outside, broadcasting through storage");
-    localStorage.setItem('message_', JSON.stringify(event.data));
-  }
-});
-
-window.addEventListener('storage', event => {
-  console.log('got storage event dur')
-  if (event.key == 'message_') {
-    console.log('got storage message_!', event);
-    const value = JSON.parse(event.newValue)
-    if (value.type == 'message') {
-      console.log("got message from storage, sharing with ports");
-      listeningPorts.forEach(port => port.postMessage(value.body));
-    }
-  }
-});
+window.LocalConnector = LocalConnector;

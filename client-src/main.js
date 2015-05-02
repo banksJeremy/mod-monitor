@@ -10,8 +10,9 @@ const util = require('./util');
 
 function siteMain(localConnection) {
   async function processDeletions(deletionMonitor) {
-    for (let post; post = await deletionMonitor.nextPost();) {
-      broadcasting.broadcast({
+    let done, post;
+    while ({done, value: post} = await deletionMonitor.nextPost(), !done) {
+      localConnection.broadcast({
         'type': 'deleted-post',
         'data': post
       });
@@ -19,9 +20,10 @@ function siteMain(localConnection) {
   }
   
   async function processUndeletionVotes(undeletionVoteMonitor) {
-    for (let post; post = await undeletionVoteMonitor.nextPost();) {
-      broadcasting.broadcast({
-        'type': 'deleted-post',
+    let done, post;
+    while ({done, value: post} = await undeletionVoteMonitor.nextPost(), !done) {
+      localConnection.broadcast({
+        'type': 'undeletion-vote',
         'data': post
       });
     }
@@ -35,15 +37,16 @@ async function chatMain(localConnection) {
   async function sendMessage(message) {
     document.getElementById('input').value = message;
     document.getElementById('sayit-button').click();
-    return new Promise((resolve, reject) => {
-      setTimeout(resolve, 4 * 1000);
-    })
+    await util.sleep(4 * 1000);
   }
  
-  for (let broadcast; broadcast = await broadcasting.nextMessage();) {
-    if (broadcast.type === 'deleted-post' && broadcast.data.isQuestion) {
+  let done, message;
+  while ({done, value: message} = await localConnection.nextMessage(), !done) {
+    if (message.type === 'deleted-post' && message.data.isQuestion) {
       await sendMessage(
         `**\`QUESTION DELETED\`** \\[[${message.id}](http://stackoverflow.com/q/${message.id})] ${message.title}`);
+    } else {
+      await sendMessage(`Unrecognized m1essage! ${JSON.stringify(message)}`);
     }
   }
 }
@@ -52,10 +55,10 @@ function main() {
   const localConnection = new LocalConnection();
 
   if (location.host.match(/^chat\./)) { 
-    console.log('Chat host detected, assuming chat room.');
+    console.log("Chat host detected, assuming chat room.");
     chatMain(localConnection);
   } else {
-    console.log('Non-chat host detected, assuming main community site.');
+    console.log("Non-chat host detected, assuming main community site.");
     siteMain(localConnection);
   }
 }

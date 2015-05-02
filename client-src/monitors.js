@@ -20,7 +20,7 @@ class Monitor {
         this.lastChunkFetchTime_ = new Date;
         break;
       } else {
-        await util.wait(timeToNextChunk);
+        await util.wait(durationUntilFetchNextChunk);
         continue;
       }
     }
@@ -32,6 +32,15 @@ class Monitor {
       this.chunk_ = await getNextChunk_();
     }
     return this.chunk_.shift();
+  }
+  
+  async getHTML_(url) {
+    const response = await fetch (url, {
+      credentials: 'include',
+      headers: {'X-Requested-With': 'XMLHttpRequest'}
+    });
+    const text = await response.text()
+    return (new DOMParser).parseFromString(text, 'text/html');
   }
 }
 
@@ -56,14 +65,16 @@ class DeletedPost {
   }
 }
 
-class DeletionMonitor {
+class DeletionMonitor extends Monitor {
   constructor() {
+    super();
+    
     this.pathToRecentlyDeleted_ =
         '/tools?tab=delete&daterange=last30days&mode=recentlyDeleted';
     this.seenPosts_ = new Map
   }
   
-  async getNew() {
+  async getNextChunkNow_() {
     const latestPosts = await this.getLatest_();
     const newPosts = [];
     for (let post of latestPosts) {
@@ -96,15 +107,10 @@ class DeletionMonitor {
     });
     return data;
   }
-  
-  async getHTML_(url) {
-    const response = await fetch (url, {
-      credentials: 'include',
-      headers: {'X-Requested-With': 'XMLHttpRequest'}
-    });
-    const text = await response.text()
-    return (new DOMParser).parseFromString(text, 'text/html');
-  }
+}
+
+class UndeletionVoteMonitor extends Monitor {
+
 }
 
 module.exports = {DeletedPost, DeletionMonitor, UndeletionVoteMonitor};
