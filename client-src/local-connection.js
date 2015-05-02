@@ -9,12 +9,15 @@ class LocalConnection {
     this.frame_ = document.createElement('iframe');
     this.frameLoaded_ = util.nextEvent(this.frame_, 'load');
     this.frame_.src = 'http://localhost:29684/local-connector.html?' + Math.random();
+    this.frame_.style.display = 'none';
+    document.body.appendChild(this.frame_);
     
     const {port1: ourPort, port2: farPort} = new MessageChannel;
     this.port_ = ourPort;
     this.port_.onmessage = event => this.handlePortMessage_(event);
 
     this.ready_ = this.frameLoaded_.then(event => {
+      console.log("frame ready, iniitlaizing it");
       this.frame_.contentWindow.postMessage({type: 'port'}, '*', [farPort]);
     });
 
@@ -28,10 +31,12 @@ class LocalConnection {
         this.resolveNextPromise_ = resolve;
       });
     }
-    return this.nextPromise_;
+    const value = await this.nextPromise_;
+    return {value};
   }
 
   handlePortMessage_(event) {
+    console.log("Got port message", event);
     if (this.resolveNextPromise_) {
       const resolve = this.resolveNextPromise_;
       this.nextPromise_ = null;
@@ -43,14 +48,8 @@ class LocalConnection {
     }
   }
 
-  handleMessage_(message) {
-    console.log("got broadcasted message", message); 
-  }
-
   async broadcast(message) {
-    console.log('awaiting ready to broadcast...');
     await this.ready_;
-    console.log('brodcasting...', message);
     this.frame_.contentWindow.postMessage({
       type: 'broadcast',
       data: {

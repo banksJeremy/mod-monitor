@@ -5,6 +5,8 @@
  */
 class LocalConnector {
   constructor() {
+    console.debug("Initializing LocalConnector");
+    
     // Handle the initialization message recieved from the parent frame.
     window.addEventListener('message', this);
     // Handle messages relayed from from LocalConnectors in other windows.
@@ -29,6 +31,7 @@ class LocalConnector {
 
   handleWindowMessage_(event) {
     if (event.data.type == 'port') {
+      console.debug("LocalConnector port initialized.");
       console.assert(this.port_ === null);
       this.port_ = event.ports[0];
     }
@@ -44,13 +47,15 @@ class LocalConnector {
 
   handleWindowStorage_(event) {
     if (event.key === this.broadcastStorageKey_) {
-      console.log("Got broadcast storage event.", event);
+      console.debug("Got broadcast storage event.", event);
       const value = JSON.parse(event.newValue)
-      if (value.type == 'broadcast') {
-        listeningPorts.forEach(port => port.postMessage(value.body));
+      if (this.port_) {
+        this.port_.postMessage(value);
+      } else {
+        console.warn("Got no port to which to relay that event.");
       }
     }
   }
 }
 
-window.LocalConnector = LocalConnector;
+window.localConnector = new LocalConnector;

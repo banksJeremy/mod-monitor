@@ -19,7 +19,8 @@ class Monitor {
   async untilNextChunkFetchTime_() {
     for (;;) {
       let durationUntilFetchNextChunk =
-          new Date - (this.lastChunkFetchTime_ + this.minChunkFetchInterval_);
+          (this.lastChunkFetchTime_ + this.minChunkFetchInterval_) - new Date;
+      console.log("Waiting", durationUntilFetchNextChunk, "to reconsider fetching next chunk.")
       if (durationUntilFetchNextChunk <= 0) {
         this.lastChunkFetchTime_ = (+new Date) + this.minChunkFetchInterval_ * (.25 * Math.random());
         break;
@@ -35,7 +36,7 @@ class Monitor {
       await this.untilNextChunkFetchTime_();
       this.chunk_ = await this.getNextChunk_();
     }
-    return this.chunk_.shift();
+    return {value: this.chunk_.shift()};
   }
   
   async getHTML_(url) {

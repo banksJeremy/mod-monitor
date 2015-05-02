@@ -15,8 +15,9 @@ const util = require('./util');
 
 function siteMain(localConnection) {
   async function processDeletions(deletionMonitor) {
-    let done, post;
-    while ({done, value: post} = await deletionMonitor.next(), !done) {
+    for (;;) {
+      let {done, value: post} = await deletionMonitor.next();
+      if (done) break;
       console.debug("Post deletion observed:", post);
       localConnection.broadcast({
         'type': 'deleted-post',
@@ -44,7 +45,7 @@ async function chatMain(localConnection) {
   async function sendMessage(message) {
     document.getElementById('input').value = message;
     document.getElementById('sayit-button').click();
-    await util.sleep(4 * 1000);
+    await util.sleep(5 * 1000);
   }
  
   let done, message;
@@ -61,6 +62,7 @@ async function chatMain(localConnection) {
 
 function main() {
   const localConnection = new LocalConnection();
+  window.localConnection = localConnection;
 
   if (location.host.match(/^chat\./)) { 
     console.info("Chat host detected, assuming chat room.");
