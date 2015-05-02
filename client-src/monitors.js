@@ -1,14 +1,18 @@
 const util = require('./util');
 
 
+/**
+ * A Monitor scrapes a web page for new events, and provides an interface
+ * for asynchronously iterating over these events as they are observed.
+ */
 class Monitor {  
   constructor() {
     this.chunk_ = [];
     this.minChunkFetchInterval_ = 24 * 1000;
-    this.lastChunkFetchTime_ = -Infinity;
+    this.lastChunkFetchTime_ = (+new Date) - this.minChunkFetchInterval_ * (.5 * Math.random());
   }
 
-  async getNextChunkNow_() {
+  async getNextChunk_() {
     throw new Error("must be implemented in subclass");
   }
 
@@ -17,10 +21,10 @@ class Monitor {
       let durationUntilFetchNextChunk =
           new Date - (this.lastChunkFetchTime_ + this.minChunkFetchInterval_);
       if (durationUntilFetchNextChunk <= 0) {
-        this.lastChunkFetchTime_ = new Date;
+        this.lastChunkFetchTime_ = (+new Date) + this.minChunkFetchInterval_ * (.25 * Math.random());
         break;
       } else {
-        await util.wait(durationUntilFetchNextChunk);
+        await util.sleep(durationUntilFetchNextChunk);
         continue;
       }
     }
@@ -29,7 +33,7 @@ class Monitor {
   async next() {
     while (!this.chunk_.length) {
       await this.untilNextChunkFetchTime_();
-      this.chunk_ = await getNextChunk_();
+      this.chunk_ = await this.getNextChunk_();
     }
     return this.chunk_.shift();
   }
@@ -44,6 +48,9 @@ class Monitor {
   }
 }
 
+/**
+ * Monitors posts being deleted.
+ */
 class DeletedPost {
   constructor({id, utcTime, isQuestion, isAnswer, title}) {
     this.id = id
@@ -74,7 +81,7 @@ class DeletionMonitor extends Monitor {
     this.seenPosts_ = new Map
   }
   
-  async getNextChunkNow_() {
+  async getNextChunk_() {
     const latestPosts = await this.getLatest_();
     const newPosts = [];
     for (let post of latestPosts) {
@@ -109,8 +116,36 @@ class DeletionMonitor extends Monitor {
   }
 }
 
+/**
+ * Monitors votes to undelete posts.
+ */
 class UndeletionVoteMonitor extends Monitor {
-
+  // NOT IMPLEMENTED
 }
 
-module.exports = {DeletedPost, DeletionMonitor, UndeletionVoteMonitor};
+/**
+ * Monitors certain flags appearing in the moderator queue.
+ */
+class ModFlagMonitor extends Monitor {
+  // NOT IMPLEMENTED
+}
+
+/**
+ * Monitors edits to recently-deleted questions, as identified by a
+ * DeletionMonitor instance.
+ */
+class DeletedEditsMonitor extends Monitor {
+  constructor(deletionMontior) {
+    super();
+    this.deletionMontior_ = deletionMontior;
+  }
+  
+  // NOT IMPLEMENTED
+}
+
+module.exports = {
+  DeletionMonitor,
+  UndeletionVoteMonitor,
+  ModFlagMonitor,
+  DeletedEditsMonitor
+};

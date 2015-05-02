@@ -1,17 +1,23 @@
 try {
   require('babel/polyfill');
 } catch (e) {
-  console.error(e);
+  console.warn(e);
 }
 
-const {DeletionMonitor, UndeletionVoteMonitor} = require('./monitors');
+const {
+  DeletionMonitor,
+  UndeletionVoteMonitor,
+  ModFlagMonitor,
+  DeletedEditsMonitor
+} = require('./monitors');
 const {LocalConnection} = require('./local-connection'); 
 const util = require('./util');
 
 function siteMain(localConnection) {
   async function processDeletions(deletionMonitor) {
     let done, post;
-    while ({done, value: post} = await deletionMonitor.nextPost(), !done) {
+    while ({done, value: post} = await deletionMonitor.next(), !done) {
+      console.debug("Post deletion observed:", post);
       localConnection.broadcast({
         'type': 'deleted-post',
         'data': post
@@ -21,7 +27,8 @@ function siteMain(localConnection) {
   
   async function processUndeletionVotes(undeletionVoteMonitor) {
     let done, post;
-    while ({done, value: post} = await undeletionVoteMonitor.nextPost(), !done) {
+    while ({done, value: post} = await undeletionVoteMonitor.next(), !done) {
+      console.debug("Undeletion vote observed:", post);
       localConnection.broadcast({
         'type': 'undeletion-vote',
         'data': post
@@ -30,7 +37,7 @@ function siteMain(localConnection) {
   }
 
   processDeletions(new DeletionMonitor);
-  processUndeletionVotes(new UndeletionVoteMonitor);
+  // processUndeletionVotes(new UndeletionVoteMonitor);
 }
 
 async function chatMain(localConnection) {
@@ -41,12 +48,13 @@ async function chatMain(localConnection) {
   }
  
   let done, message;
-  while ({done, value: message} = await localConnection.nextMessage(), !done) {
+  while ({done, value: message} = await localConnection.next(), !done) {
+    console.debug("Got broadcasted message:", message);
     if (message.type === 'deleted-post' && message.data.isQuestion) {
       await sendMessage(
         `**\`QUESTION DELETED\`** \\[[${message.id}](http://stackoverflow.com/q/${message.id})] ${message.title}`);
     } else {
-      await sendMessage(`Unrecognized m1essage! ${JSON.stringify(message)}`);
+      await sendMessage(`Unrecognized message! ${JSON.stringify(message)}`);
     }
   }
 }
@@ -55,10 +63,10 @@ function main() {
   const localConnection = new LocalConnection();
 
   if (location.host.match(/^chat\./)) { 
-    console.log("Chat host detected, assuming chat room.");
+    console.info("Chat host detected, assuming chat room.");
     chatMain(localConnection);
   } else {
-    console.log("Non-chat host detected, assuming main community site.");
+    console.info("Non-chat host detected, assuming main community site.");
     siteMain(localConnection);
   }
 }

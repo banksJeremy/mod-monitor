@@ -17,15 +17,29 @@ class LocalConnection {
     this.ready_ = this.frameLoaded_.then(event => {
       this.frame_.contentWindow.postMessage({type: 'port'}, '*', [farPort]);
     });
+
+    this.nextPromise_ = null;
+    this.resolveNextPromise_ = null;
+  }
+
+  async next() {
+    if (!this.nextPromise_) {
+      this.nextPromise_ = new Promise(resolve => {
+        this.resolveNextPromise_ = resolve;
+      });
+    }
+    return this.nextPromise_;
   }
 
   handlePortMessage_(event) {
-    if (!this.seenMessageIds_.has(event.data.id)) {
-      this.handleMessage_(event.data.message);
-      this.seenMessageIds_.add(event.data.tesid);
-      console.log("handled event", event);
+    if (this.resolveNextPromise_) {
+      const resolve = this.resolveNextPromise_;
+      this.nextPromise_ = null;
+      this.resolveNextPromise_ = null;
+      resolve(event.data);
     } else {
-      console.log("ignoring duplicate message", event);
+      // TODO: buffer instead of dropping?
+      console.warn("Message event dropped:", event);
     }
   }
 
