@@ -54,7 +54,7 @@ async function chatMain(localConnection) {
     if (message.type === 'deleted-post' && message.data.isQuestion) {
       await sendMessage(
         '**`QUESTION DELETED`** ' +
-        '`' + util.lpad(message.data.id, 8) + '` ' +
+        '`\u200B' + util.lpad(message.data.id, 8) + '` ' +
         '[' + util.truncate(message.data.title, 48).replace(/([\[\]])/g, '\\$1') + ']' +
         `(http://stackoverflow.com/q/${message.data.id})`);
       console.debug("Message sent, and sleep finished.");

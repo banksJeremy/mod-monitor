@@ -16,10 +16,10 @@ function nextEvent(target, type, useCapture) {
 
 function lpad(subject, length, padding=' ') {
   subject = String(subject);
-  if (subject.length <= length) {
+  if (subject.length >= length) {
     return subject;
   } else {
-    return new Array(length - subject.length + 1).join(padding) + subject; 
+    return (new Array(length - subject.length + 1)).join(padding) + subject; 
   }
 }
 
@@ -31,7 +31,7 @@ function truncate(subject, length, terminator='…') {
   }
 }
 
-function trim(subject, trimmable=' \n\r\t') {
+function trim(subject, trimmable=' \n\r\t\u00a0') {
   let startOffset = 0;
   for (let i = 0; i < subject.length; i++) {
     if (trimmable.indexOf(subject[i]) != -1) {
