@@ -27,9 +27,30 @@ function truncate(subject, length, terminator='…') {
   if (subject.length <= length) {
     return subject;
   } else {
-    return subject.slice(0, length - terminator.length) + terminator;
+    return trim(subject.slice(0, length - terminator.length)) + terminator;
+  }
+}
+
+function trim(subject, trimmable=' \n\r\t') {
+  let startOffset = 0;
+  for (let i = 0; i < subject.length; i++) {
+    if (timmable.indexOf(subject[i]) != -1) {
+      startOffset = i + 1;
+    } else {
+      break;
+    }
   }
 
+  let endOffset = 0;
+  for (let i = 0; i < subject.length - stratIndex; i++) {
+    if (trimmable.indexOf(subject[subject.length - 1 - i]) != -1) {
+      endOffset = i + 1;
+    } else {
+      break;
+    }
+  }
+
+  return subject.slice(startOffset, subject.length - startOffset - endOffset);
 }
 
 module.exports = {
