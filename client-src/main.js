@@ -45,7 +45,7 @@ async function chatMain(localConnection) {
   async function sendMessage(message) {
     document.getElementById('input').value = message;
     document.getElementById('sayit-button').click();
-    await util.sleep(5 * 1000);
+    await util.sleep(8 * 1024);
   }
  
   let done, message;
@@ -53,9 +53,10 @@ async function chatMain(localConnection) {
     console.debug("Got broadcasted message:", message);
     if (message.type === 'deleted-post' && message.data.isQuestion) {
       await sendMessage(
-        `**\`QUESTION DELETED\`** \\[[${message.id}](http://stackoverflow.com/q/${message.id})] ${message.title}`);
+        `**\`QUESTION DELETED\`** \\[[${message.data.id}](http://stackoverflow.com/q/${message.data.id})] ${message.data.title}`);
+      console.debug("Message sent, and sleep finished.");
     } else {
-      await sendMessage(`Unrecognized message! ${JSON.stringify(message)}`);
+      console.debug('Ignoring message:', JSON.stringify(message));
     }
   }
 }

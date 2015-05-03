@@ -9,7 +9,7 @@ class Monitor {
   constructor() {
     this.chunk_ = [];
     this.minChunkFetchInterval_ = 24 * 1000;
-    this.lastChunkFetchTime_ = (+new Date) - this.minChunkFetchInterval_ * (.5 * Math.random());
+    this.lastChunkFetchTime_ = (+new Date) - this.minChunkFetchInterval_ * Math.random();
   }
 
   async getNextChunk_() {

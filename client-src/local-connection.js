@@ -3,9 +3,6 @@ const util = require('./util');
 
 class LocalConnection {
   constructor(callback) {
-    this.idBase_ = String(Math.random()) + String(new Date);
-    this.idIndex_ = (Math.random() * 5e12) | 0;
-    
     this.frame_ = document.createElement('iframe');
     this.frameLoaded_ = util.nextEvent(this.frame_, 'load');
     this.frame_.src = 'http://localhost:29684/local-connector.html?' + Math.random();
@@ -17,34 +14,37 @@ class LocalConnection {
     this.port_.onmessage = event => this.handlePortMessage_(event);
 
     this.ready_ = this.frameLoaded_.then(event => {
-      console.log("frame ready, iniitlaizing it");
+      console.debug("Frame ready, initializing it with port.");
       this.frame_.contentWindow.postMessage({type: 'port'}, '*', [farPort]);
     });
 
     this.nextPromise_ = null;
     this.resolveNextPromise_ = null;
+    this.buffer_ = [];
   }
 
   async next() {
+    if (this.buffer_.length) {
+      return {value: this.buffer_.shift()};
+    }
     if (!this.nextPromise_) {
       this.nextPromise_ = new Promise(resolve => {
         this.resolveNextPromise_ = resolve;
       });
     }
-    const value = await this.nextPromise_;
-    return {value};
+    return {value: await this.nextPromise_};
   }
 
   handlePortMessage_(event) {
-    console.log("Got port message", event);
+    console.debug("Got port message", event);
     if (this.resolveNextPromise_) {
       const resolve = this.resolveNextPromise_;
       this.nextPromise_ = null;
       this.resolveNextPromise_ = null;
       resolve(event.data);
     } else {
-      // TODO: buffer instead of dropping?
-      console.warn("Message event dropped:", event);
+      console.debug("Buffering it.");
+      this.buffer_.push(event.data);
     }
   }
 
@@ -52,10 +52,7 @@ class LocalConnection {
     await this.ready_;
     this.frame_.contentWindow.postMessage({
       type: 'broadcast',
-      data: {
-        message: message,
-        id: this.idBase_ + this.idIndex_++
-      }
+      data: message
     }, '*');
   }
 }
