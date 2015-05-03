@@ -7,7 +7,7 @@ class LocalConnector {
   constructor() {
     console.debug("Initializing LocalConnector");
     
-    this.idBase_ = String(Math.random()) + String(new Date);
+    this.idBase_ = String(Math.random()) + String(new Date());
     this.idIndex_ = (Math.random() * 5e12) | 0;
     
     // Handle the initialization message recieved from the parent frame.
@@ -39,7 +39,7 @@ class LocalConnector {
       this.port_ = event.ports[0];
     }
     if (event.data.type == 'broadcast') {
-      console.log("Broadcasting message")
+      console.log("Broadcasting message");
       localStorage.setItem(this.broadcastStorageKey_, JSON.stringify({
         message: event.data.data,
         id: this.idBase_ + this.idIndex_++
@@ -55,7 +55,7 @@ class LocalConnector {
   handleWindowStorage_(event) {
     if (event.key === this.broadcastStorageKey_) {
       console.debug("Got broadcast storage event.", event);
-      const value = JSON.parse(event.newValue)
+      const value = JSON.parse(event.newValue);
       if (this.port_) {
         this.port_.postMessage(value.message);
       } else {
@@ -65,4 +65,4 @@ class LocalConnector {
   }
 }
 
-window.localConnector = new LocalConnector;
+window.localConnector = new LocalConnector();

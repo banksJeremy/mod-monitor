@@ -1,103 +1,19 @@
-const util = require('./util');
+const {Monitor, ScrapedItem} = require('./monitor_');
 
 
-/**
- * A Monitor scrapes a web page for new events, and provides an interface
- * for asynchronously iterating over these events as they are observed.
- */
-class Monitor {  
-  constructor() {
-    this.chunk_ = [];
-    this.minChunkFetchInterval_ = 24 * 1000;
-    this.lastChunkFetchTime_ = (+new Date) - this.minChunkFetchInterval_ * Math.random();
-  }
-
-  async getNextChunk_() {
-    throw new Error("must be implemented in subclass");
-  }
-
-  async untilNextChunkFetchTime_() {
-    for (;;) {
-      let durationUntilFetchNextChunk =
-          (this.lastChunkFetchTime_ + this.minChunkFetchInterval_) - new Date;
-      console.log("Waiting", durationUntilFetchNextChunk, "to reconsider fetching next chunk.")
-      if (durationUntilFetchNextChunk <= 0) {
-        this.lastChunkFetchTime_ = (+new Date) + this.minChunkFetchInterval_ * (.25 * Math.random());
-        break;
-      } else {
-        await util.sleep(durationUntilFetchNextChunk);
-        continue;
-      }
-    }
-  }
-
-  async next() {
-    while (!this.chunk_.length) {
-      await this.untilNextChunkFetchTime_();
-      this.chunk_ = await this.getNextChunk_();
-    }
-    return {value: this.chunk_.shift()};
-  }
-  
-  async getHTML_(url) {
-    const response = await fetch (url, {
-      credentials: 'include',
-      headers: {'X-Requested-With': 'XMLHttpRequest'}
-    });
-    const text = await response.text()
-    return (new DOMParser).parseFromString(text, 'text/html');
-  }
-}
 
 /**
  * Monitors posts being deleted.
  */
-class DeletedPost {
-  constructor({id, utcTime, isQuestion, isAnswer, title}) {
-    this.id = id
-    this.utcTime = utcTime
-    this.isQuestion = isQuestion
-    this.isAnswer = isAnswer
-    this.title = title
-  }
-
-  euqals(other) {
-    return (
-      other instanceof DeletedPost &&
-      other.id == this.id &&
-      other.utcTime == this.utcTime)
-  }
-
-  equalityKey() {
-    return `${this.utcTime}.${this.id}.DeletedPost`;
-  }
-}
-
-class DeletionMonitor extends Monitor {
+class PostDeletionMonitor extends Monitor {
   constructor() {
     super();
-    
-    this.pathToRecentlyDeleted_ =
+    this.path_ =
         '/tools?tab=delete&daterange=last30days&mode=recentlyDeleted';
-    this.seenPosts_ = new Map
-  }
-  
-  async getNextChunk_() {
-    const latestPosts = await this.getLatest_();
-    const newPosts = [];
-    for (let post of latestPosts) {
-      const key = post.equalityKey();
-      if (!this.seenPosts_.has(key)) {
-        this.seenPosts_.set(key, post);
-        newPosts.unshift(post);
-      }
-    }
-
-    return newPosts;
   }
 
   async getLatest_() {
-    const doc = await this.getHTML_(this.pathToRecentlyDeleted_);
+    const doc = await this.getHTML_(this.path_);
     const rows = Array.from(doc.querySelectorAll('.summary-table tr'))
     const data = rows.map(row => {
       const link = row.querySelector('a');
@@ -105,7 +21,7 @@ class DeletionMonitor extends Monitor {
         /\/questions\/(\d+)(?:[^#]*#(\d+)$)?/);
       if (!linkMatch) throw new Error(`bad link: ${link.outerHTML}`)
       const [, questionIdStr, answerIdStr] = linkMatch;
-      return new DeletedPost({
+      return new PostDeletion({
         id: Number(answerIdStr || questionIdStr),
         utcTime: row.querySelector('.relativetime').title,
         isQuestion: link.classList.contains('question-hyperlink'),
@@ -118,11 +34,89 @@ class DeletionMonitor extends Monitor {
 }
 
 /**
+ * The deletion of a post, as scraped from a page.
+ */
+class PostDeletion extends ScrapedItem {
+  constructor({id, utcTime, isQuestion, isAnswer, title}) {
+    super();
+    this.id = id;
+    this.utcTime = utcTime;
+    this.isQuestion = isQuestion;
+    this.isAnswer = isAnswer;
+    this.title = title;
+  }
+
+  equals(other) {
+    return (
+      other instanceof PostDeletion &&
+      other.id === this.id &&
+      other.utcTime === this.utcTime)
+  }
+
+  equalityKey() {
+    return `${this.utcTime}.${this.id}.PostDeletion`;
+  }
+}
+
+
+/**
  * Monitors votes to undelete posts.
  */
 class UndeletionVoteMonitor extends Monitor {
-  // NOT IMPLEMENTED
+  constructor() {
+    super();
+    this.path_ =
+        '/tools?tab=delete&daterange=last30days&mode=recentUndelete';
+  }
+
+  async getLatest_() {
+    const doc = await this.getHTML_(this.path_);
+    const rows = Array.from(doc.querySelectorAll('.summary-table tr'))
+    const data = rows.map(row => {
+      const recentVotes = +row.querySelector('.cnt').textContent;
+      const remainingVotes = +row.querySelector('span').title.split(' ')[0];
+      const link = row.querySelector('a');
+      const linkMatch = link.getAttribute('href').match(
+        /\/questions\/(\d+)(?:[^#]*#(\d+)$)?/);
+      if (!linkMatch) throw new Error(`bad link: ${link.outerHTML}`)
+      const [, questionIdStr, answerIdStr] = linkMatch;
+      return new UndeletionVote({
+        recentVotes,
+        remainingVotes,
+        id: Number(answerIdStr || questionIdStr),
+        isQuestion: link.classList.contains('question-hyperlink'),
+        isAnswer: link.classList.contains('answer-hyperlink'),
+        title: link.textContent
+      });
+    });
+    return data;
+  }
 }
+
+class UndeletionVote extends ScrapedItem {
+  constructor({id, isQuestion, isAnswer, title, recentVotes, remainingVotes}) {
+    super();
+    this.id = id;
+    this.isQuestion = isQuestion;
+    this.isAnswer = isAnswer;
+    this.title = title;
+    this.recentVotes = recentVotes;
+    this.remainingVotes = remainingVotes;
+  }
+
+  equals(other) {
+    return (
+      other instanceof UndeletionVote &&
+      other.id === this.id &&
+      other.recentVotes === this.recentVotes &&
+      other.remainingVotes === this.remainingVotes)
+  }
+
+  equalityKey() {
+    return `${this.recentVotes}.${this.remainingVotes}.${this.id}.UndeletionVote`;
+  }
+}
+
 
 /**
  * Monitors certain flags appearing in the moderator queue.
@@ -131,22 +125,32 @@ class ModFlagMonitor extends Monitor {
   // NOT IMPLEMENTED
 }
 
+class ModFlag extends ScrapedItem {
+  // NOT IMPLEMENTED
+}
+
+
 /**
  * Monitors edits to recently-deleted questions, as identified by a
- * DeletionMonitor instance.
+ * PostDeletionMonitor instance.
  */
-class DeletedEditsMonitor extends Monitor {
+class DeletedEditMonitor extends Monitor {
   constructor(deletionMontior) {
     super();
     this.deletionMontior_ = deletionMontior;
   }
-  
+
   // NOT IMPLEMENTED
 }
 
+class DeletedEdit extends ScrapedItem {
+  // NOT IMPLEMENTED
+}
+
+
 module.exports = {
-  DeletionMonitor,
-  UndeletionVoteMonitor,
+  DeletedEditMonitor,
   ModFlagMonitor,
-  DeletedEditsMonitor
+  PostDeletionMonitor,
+  UndeletionVoteMonitor
 };
