@@ -14,4 +14,27 @@ function nextEvent(target, type, useCapture) {
   });
 }
 
-module.exports = {sleep, nextEvent};
+function lpad(subject, length, padding=' ') {
+  subject = String(subject);
+  if (subject.length <= length) {
+    return subject;
+  } else {
+    return new Array(length - subject.length + 1).join(padding) + subject; 
+  }
+}
+
+function truncate(subject, length, terminator='…') {
+  if (subject.length <= length) {
+    return subject;
+  } else {
+    return subject.slice(0, length - terminator.length) + terminator;
+  }
+
+}
+
+module.exports = {
+  sleep,
+  nextEvent,
+  lpad,
+  truncate
+};
