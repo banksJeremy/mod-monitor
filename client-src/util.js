@@ -34,7 +34,7 @@ function truncate(subject, length, terminator='…') {
 function trim(subject, trimmable=' \n\r\t') {
   let startOffset = 0;
   for (let i = 0; i < subject.length; i++) {
-    if (timmable.indexOf(subject[i]) != -1) {
+    if (trimmable.indexOf(subject[i]) != -1) {
       startOffset = i + 1;
     } else {
       break;
@@ -42,7 +42,7 @@ function trim(subject, trimmable=' \n\r\t') {
   }
 
   let endOffset = 0;
-  for (let i = 0; i < subject.length - stratIndex; i++) {
+  for (let i = 0; i < subject.length - startOffset; i++) {
     if (trimmable.indexOf(subject[subject.length - 1 - i]) != -1) {
       endOffset = i + 1;
     } else {
@@ -50,12 +50,15 @@ function trim(subject, trimmable=' \n\r\t') {
     }
   }
 
-  return subject.slice(startOffset, subject.length - startOffset - endOffset);
+  return subject.slice(startOffset, subject.length - endOffset);
 }
 
 module.exports = {
   sleep,
   nextEvent,
   lpad,
-  truncate
+  truncate,
+  trim
 };
+
+window.util = module.exports;

@@ -55,7 +55,7 @@ async function chatMain(localConnection) {
       await sendMessage(
         '**`QUESTION DELETED`** ' +
         '`' + util.lpad(message.data.id, 8) + '` ' +
-        '[' + util.truncate(message.data.title, 36).replace(/([\[\]])/g, '\\$1') + ']' +
+        '[' + util.truncate(message.data.title, 48).replace(/([\[\]])/g, '\\$1') + ']' +
         `(http://stackoverflow.com/q/${message.data.id})`);
       console.debug("Message sent, and sleep finished.");
     } else {
